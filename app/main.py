@@ -176,7 +176,7 @@ def query_knowledge(request: QueryRequest):
         )
         
         # Reject questions when no saved chunk is sufficiently relevant.
-        MIN_SIMILARITY = 0.45
+        MIN_SIMILARITY = 0.60
 
         if not ranked_chunks or ranked_chunks[0]["similarity"] < MIN_SIMILARITY:
             return {
