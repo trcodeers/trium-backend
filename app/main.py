@@ -1,6 +1,7 @@
 
 from contextlib import asynccontextmanager
 
+from app.db import get_db
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
@@ -71,3 +72,34 @@ def ingest(request: IngestRequest):
             status_code=502,
             detail="Ingestion failed. Check the server logs.",
         ) from exc
+
+
+
+
+
+@app.get("/items")
+def list_items():
+    with get_db() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, source_type, source_url, raw_content, created_at
+            FROM items
+            ORDER BY id DESC
+            """
+        ).fetchall()
+
+    return {
+        "items": [
+            {
+                "id": row["id"],
+                "source_type": row["source_type"],
+                "source_url": row["source_url"],
+                "content": row["raw_content"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ],
+        "total": len(rows),
+    }
+
+
