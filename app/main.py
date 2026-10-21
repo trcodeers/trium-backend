@@ -4,8 +4,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from app.db import init_db
 from app.ai import embed_text
+from app.db import init_db
+from app.ingestion import ingest_item
+from app.schemas import IngestRequest, IngestResponse
 
 
 @asynccontextmanager
@@ -45,10 +47,27 @@ def test_embedding(request: EmbeddingRequest):
             "dimensions": len(vector),
             "embedding_preview": vector[:5],
         }
-
     except Exception as exc:
         print(f"Embedding error: {exc}")
         raise HTTPException(
             status_code=502,
             detail="Embedding generation failed. Check the server logs.",
+        ) from exc
+
+
+@app.post("/ingest", response_model=IngestResponse)
+def ingest(request: IngestRequest):
+    try:
+       return ingest_item(
+            source_type=request.source_type,
+            content=request.content,
+            url=request.url,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        print(f"Ingestion error: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail="Ingestion failed. Check the server logs.",
         ) from exc

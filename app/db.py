@@ -39,7 +39,6 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_type TEXT NOT NULL
                     CHECK(source_type IN ('note', 'url')),
-                title TEXT NOT NULL,
                 source_url TEXT,
                 raw_content TEXT NOT NULL,
                 created_at TEXT NOT NULL
