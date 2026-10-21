@@ -1,20 +1,18 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
 from app.db import init_db
+from app.ai import embed_text
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Runs automatically when the application starts
     init_db()
     print("Database tables initialized successfully")
-
     yield
-
-    # Runs when the application shuts down
 
 
 app = FastAPI(
@@ -24,6 +22,33 @@ app = FastAPI(
 )
 
 
+class EmbeddingRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=10000)
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.post("/test-embedding")
+def test_embedding(request: EmbeddingRequest):
+    try:
+        vector = embed_text(
+            request.text,
+            task_type="RETRIEVAL_DOCUMENT",
+        )
+
+        return {
+            "success": True,
+            "text": request.text,
+            "dimensions": len(vector),
+            "embedding_preview": vector[:5],
+        }
+
+    except Exception as exc:
+        print(f"Embedding error: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail="Embedding generation failed. Check the server logs.",
+        ) from exc
