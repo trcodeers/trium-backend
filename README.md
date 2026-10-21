@@ -37,7 +37,7 @@ Clone or open the backend repository and navigate to its root directory.
 Create a `.env` file:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key
+GEMINI_API_KEY=<your_gemini_api_key>
 GEMINI_CHAT_MODEL=gemini-2.5-flash
 GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 DATABASE_PATH=./knowledge.db
