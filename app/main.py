@@ -167,6 +167,18 @@ def query_knowledge(request: QueryRequest):
             key=lambda chunk: chunk["similarity"],
             reverse=True,
         )
+        
+        # Reject questions when no saved chunk is sufficiently relevant.
+        MIN_SIMILARITY = 0.45
+
+        if not ranked_chunks or ranked_chunks[0]["similarity"] < MIN_SIMILARITY:
+            return {
+                "answer": (
+                    "I couldn't find sufficiently relevant information "
+                    "in your saved knowledge to answer that question."
+                ),
+                "sources": [],
+            }
 
         # 4. Keep the five most relevant chunks.
         selected = ranked_chunks[:5]
