@@ -1,11 +1,10 @@
-
+from contextlib import asynccontextmanager
 import json
-
+from fastapi.middleware.cors import CORSMiddleware
 from app.ai import cosine_similarity, embed_text, generate_answer
 from app.db import get_db
 from app.schemas import QueryRequest, QueryResponse
 
-from contextlib import asynccontextmanager
 
 from app.db import get_db
 from fastapi import FastAPI, HTTPException
@@ -15,7 +14,6 @@ from app.ai import embed_text
 from app.db import init_db
 from app.ingestion import ingest_item
 from app.schemas import IngestRequest, IngestResponse
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,6 +26,15 @@ app = FastAPI(
     title="AI Knowledge Inbox",
     description="Save, search, and ask questions about your knowledge.",
     lifespan=lifespan,
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
