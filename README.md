@@ -159,4 +159,4 @@ The `knowledge.db` file is created locally when the database is initialized.
 
 ## Current Scope
 
-This is a lightweight prototype intended to demonstrate document ingestion, embedding-based retrieval, and grounded question answering. It uses local SQLite storage and a straightforward similarity-search approach rather than a dedicated vector database.
+This is a lightweight prototype intended to demonstrate document ingestion, embedding-based retrieval, and grounded question answering. It uses local SQLite storage and a straightforward similarity-search approach rather than a dedicated vector database.# trium-backend
