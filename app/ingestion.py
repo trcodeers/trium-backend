@@ -31,7 +31,8 @@ def fetch_url(url: str) -> tuple[str, str]:
     try:
         with httpx.Client(
             timeout=15,
-            follow_redirects=False,
+            follow_redirects=True,
+            max_redirects=5,
             headers={"User-Agent": "AI-Knowledge-Inbox/1.0"},
         ) as client:
             response = client.get(url)
