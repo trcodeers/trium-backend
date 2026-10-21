@@ -1,4 +1,10 @@
 
+import json
+
+from app.ai import cosine_similarity, embed_text, generate_answer
+from app.db import get_db
+from app.schemas import QueryRequest, QueryResponse
+
 from contextlib import asynccontextmanager
 
 from app.db import get_db
@@ -101,5 +107,104 @@ def list_items():
         ],
         "total": len(rows),
     }
+
+
+
+
+
+@app.post("/query", response_model=QueryResponse)
+def query_knowledge(request: QueryRequest):
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=422,
+            detail="Question cannot be empty.",
+        )
+
+    try:
+        # 1. Embed the question for semantic retrieval.
+        question_embedding = embed_text(
+            question,
+            task_type="RETRIEVAL_QUERY",
+        )
+
+        # 2. Load saved chunks and their parent item metadata.
+        with get_db() as conn:
+            rows = conn.execute(
+                """
+                SELECT
+                    chunks.item_id,
+                    chunks.chunk_index,
+                    chunks.content,
+                    chunks.embedding,
+                    items.source_url
+                FROM chunks
+                JOIN items ON items.id = chunks.item_id
+                """
+            ).fetchall()
+
+        # 3. Rank chunks by cosine similarity.
+        ranked_chunks = []
+
+        for row in rows:
+            stored_embedding = json.loads(row["embedding"])
+
+            similarity = cosine_similarity(
+                question_embedding,
+                stored_embedding,
+            )
+
+            ranked_chunks.append({
+                "item_id": row["item_id"],
+                "source_url": row["source_url"],
+                "chunk_index": row["chunk_index"],
+                "content": row["content"],
+                "similarity": similarity,
+            })
+
+        ranked_chunks.sort(
+            key=lambda chunk: chunk["similarity"],
+            reverse=True,
+        )
+
+        # 4. Keep the five most relevant chunks.
+        selected = ranked_chunks[:5]
+
+        # 5. Generate an answer using only the retrieved excerpts.
+        contexts = [
+            {
+                "title": f"Item {chunk['item_id']}",
+                "content": chunk["content"],
+            }
+            for chunk in selected
+        ]
+
+        answer = generate_answer(question, contexts)
+
+        return {
+            "answer": answer,
+            "sources": [
+                {
+                    "item_id": chunk["item_id"],
+                    "source_url": chunk["source_url"],
+                    "chunk_index": chunk["chunk_index"],
+                    "content": chunk["content"],
+                    "similarity": round(chunk["similarity"], 4),
+                }
+                for chunk in selected
+            ],
+        }
+
+    except Exception as exc:
+        print(f"Query error: {exc}")
+        raise HTTPException(
+            status_code=502,
+            detail="Query failed. Check the server logs.",
+        ) from exc
+
+
+
+
 
 

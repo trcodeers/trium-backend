@@ -27,3 +27,27 @@ class IngestResponse(BaseModel):
     source_type: str
     chunks_created: int
     message: str
+
+
+
+
+
+class QueryRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=5000)
+
+
+class QuerySource(BaseModel):
+    item_id: int
+    source_url: str | None
+    chunk_index: int
+    content: str
+    similarity: float
+
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: list[QuerySource]
+
+
+
+
